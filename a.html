@@ -1,0 +1,101 @@
+<html style="width:100%;height:100%">
+<head>
+<meta  charset="utf-8" />
+<title>百度地图API</title>
+<script type="text/javascript" src="http://api.map.baidu.com/api?key=&v=1.1&services=true"></script>
+</head>
+
+<body >
+	<input type="file" id="files"/>
+	<div style="width:100%;height:100%;border:#ccc solid 1px;" id="dituContent"></div>
+    
+	<script type="text/javascript">
+		var data;
+		//创建和初始化地图函数：
+		function initMap(){			
+			createMap();//创建地图
+			setMapEvent();//设置地图事件
+			addMapControl();//向地图添加控件
+		}
+		var map = new BMap.Map("dituContent");//在百度地图容器中创建一个地图   
+		ME=new BMap.Point(116.42202,40.010962)
+		HE=new BMap.Point(116.468302,39.92263)
+		map.addOverlay(new BMap.Marker(ME));
+		map.addOverlay(new BMap.Marker(HE));
+		map.centerAndZoom(ME,15);//设定地图的中心点和坐标并将地图显示在地图容器中
+		window.map = map;//将map变量存储在全局
+		//创建地图函数：
+		function createMap(){
+			//data.length=100
+			data.forEach(t=>{
+				POS=new BMap.Point(parseFloat(t.longitude),parseFloat(t.latitude))
+				dis=map.getDistance(ME,POS)
+				dis2=map.getDistance(HE,POS)
+				if (t.price<0) return
+				if (t.price>3000) return
+				//if (t.price<4000 || t.price>7000) return
+				if (dis>5000) return
+				//if (dis2>8000) return
+				if (t.title.indexOf("求租")>=0 || t.text.indexOf("求租")>=0) return
+				if (t.title.indexOf("一室")>=0 || t.text.indexOf("一室")>=0) return
+				if (t.title.indexOf("1室")>=0 || t.text.indexOf("1室")>=0) return
+				if (t.title.indexOf("一居")>=0 || t.text.indexOf("一居")>=0) return
+				var marker = new BMap.Marker(POS);
+				map.addOverlay(marker);				
+				var label = new BMap.Label(t.price, {"offset": new BMap.Size(12, -20)});
+				marker.setLabel(label);
+				var iw = new BMap.InfoWindow("<b class='iw_poi_title' title='1111'><a target='_blank' href='"+t.onlineURL+"'>"+t.title+"</a></b><div class='iw_poi_content'>"
+					+"租金:"+t.price+"<br>"
+					+"与我的距离:"+((dis/1000).toFixed(1))+"km<br>"
+					+"与他的距离:"+((dis2/1000).toFixed(1))+"km<br>"
+					+t.text+"<br>"
+					+t.pictures.map(t=>"<img height=300 src='"+t+"'></img>")
+					+"</div>");
+				marker.addEventListener("click", function() {this.openInfoWindow(iw);});
+				iw.addEventListener("open", function() {marker.getLabel().hide();})
+				iw.addEventListener("close", function() {marker.getLabel().show();})
+				label.addEventListener("click", function() {marker.openInfoWindow(iw);})
+			})
+		}
+		
+		//地图事件设置函数：
+		function setMapEvent(){
+			map.enableDragging();//启用地图拖拽事件，默认启用(可不写)
+			map.enableScrollWheelZoom();//启用地图滚轮放大缩小
+			map.enableDoubleClickZoom();//启用鼠标双击放大，默认启用(可不写)
+			map.enableKeyboard();//启用键盘上下左右键移动地图
+		}
+		
+		//地图控件添加函数：
+		function addMapControl(){
+			//向地图中添加缩放控件
+			var ctrl_nav = new BMap.NavigationControl({anchor:BMAP_ANCHOR_TOP_LEFT,type:BMAP_NAVIGATION_CONTROL_LARGE});
+			map.addControl(ctrl_nav);
+			//向地图中添加缩略图控件
+			var ctrl_ove = new BMap.OverviewMapControl({anchor:BMAP_ANCHOR_BOTTOM_RIGHT,isOpen:1});
+			map.addControl(ctrl_ove);
+			//向地图中添加比例尺控件
+			var ctrl_sca = new BMap.ScaleControl({anchor:BMAP_ANCHOR_BOTTOM_LEFT});
+			map.addControl(ctrl_sca);
+		}
+	</script>
+	<script>		
+		var inputElement = document.getElementById("files");
+		inputElement.addEventListener("change", handleFiles, false);
+		function handleFiles() {
+		   var selectedFile = document.getElementById("files").files[0];//获取读取的File对象
+		   var name = selectedFile.name;//读取选中文件的文件名
+		   var size = selectedFile.size;//读取选中文件的大小
+		   console.log("文件名:"+name+"大小："+size);
+		   var reader = new FileReader();//这里是核心！！！读取操作就是由它完成的。
+			reader.readAsText(selectedFile);//读取文件的内容
+			reader.onload = function(){
+				let json = JSON.parse(this.result);
+				data=json
+				initMap();
+			};
+		}
+
+	</script>
+</body>
+</html>
